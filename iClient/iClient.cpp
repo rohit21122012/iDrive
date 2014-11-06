@@ -2,7 +2,11 @@
 #include <cstdlib>
 #include <cstring>
 #include <dirent.h>
-
+#include <unistd.h>	//For read and write functions ie for processes
+#include <sys/socket.h>	
+#include <sys/types.h>
+#include <netinet/in.h>	//For initializing part
+#include <netdb.h>
 
 #include <pthread.h>	//Header for POSIX threads
 
@@ -256,13 +260,14 @@ void getBack(){
 	}
 
 }
-
+int counter = 1;
 void show(string dir_name,int i){
 //	cout<<dir_name<<endl;
 	DIR *dirp = opendir(dir_name.c_str());
 	if(dirp == NULL)
 		return;
 	struct dirent *dp;
+	
 	while(dirp){
 		if((dp = readdir(dirp)) !=NULL){
 
@@ -271,11 +276,13 @@ void show(string dir_name,int i){
 				for(int j = 0; j<i; j++){
 					cout<<" ";
 				}
-				cout<<"|";
+				cout<<"|"<<counter<<"|";
+				counter ++;
 				cout<<dp->d_name<<endl;
 				//cout<<"|"<<endl;
 				show(dir_name + "/" + dp->d_name,i+2);
 			}
+			
 		}
 		
 		else{
@@ -283,16 +290,79 @@ void show(string dir_name,int i){
 		}				
 	}
 }
+bool CreateASocket(int *socket_fd){
+	*socket_fd = socket(AF_INET, SOCK_STREAM, 0);
+	if(*socket_fd<0){
+		cout<<"Error opening socket"<<endl;
+		return false;
+	}
+	return true;
+}
 
+bool ConnectAServer(int *socket_fd, struct sockaddr_in *server_addr, struct hostent **server, int *port){
+	*server = gethostbyname("localhost");
+
+	if(*server<0){
+		cout<<"No Such Host"<<endl;
+		return false;
+	}
+
+	bzero((char*) server_addr, sizeof(*server_addr));
+	(*server_addr).sin_family = AF_INET;
+	bcopy((char *) (*server)->h_addr, (char*)&(*server_addr).sin_addr.s_addr,(*server)->h_length);
+	(*server_addr).sin_port = htons(*port);
+
+	socklen_t server_size = sizeof(*server_addr);
+	//Connecting to the server
+	if(connect(*socket_fd,(struct sockaddr *) server_addr, server_size)<0){
+		cout<<"Error Connect"<<endl;
+		return false;
+	}
+	return true;
+}
 
 void  Delete(){
 	show("iFolder/",8);
+	counter = 1;
 	//if all syncing is false	
 		//Call show()
 		//Ask Sr.No  of the file to Delete
 		//Send the file name/ sr no via a socket
 
 				//Parallely on the server side receive the file name and run the system remove command
+	if(autosyncing == false && syncing == false && scheduledsyncing == false && backsyncing == false){
+		int socket_fd, port, n;
+		struct sockaddr_in server_addr;
+		struct hostent *server;
+		int theNumber, Number;
+		port = 5005;
+		char theString[255];
+		if(CreateASocket(&socket_fd) == true){
+			if(ConnectAServer(&socket_fd, &server_addr, &server, &port) == true){
+				cin>>Number;
+				int theNumber = htonl(Number);
+				n = write(socket_fd, &theNumber, sizeof(theNumber));
+				if(n<0){
+					cout<<"Error Writing to the socket"<<endl;
+				}
+
+				strcpy(theString, username.c_str());
+				n = write(socket_fd, (void *)theString, 255);
+				if(n<0){
+					cout<<"Error Writing to the socket"<<endl;
+				}
+				strcpy(theString, password.c_str());
+				n = write(socket_fd, (void *)theString, 255);
+				if(n<0){
+					cout<<"Error Writing to the socket"<<endl;
+				}
+
+			}
+		}
+		else{
+			cout<<"Unable to fetch Content"<<endl;
+		}
+	}
 
 }
 
