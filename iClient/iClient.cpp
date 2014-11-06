@@ -322,8 +322,8 @@ bool ConnectAServer(int *socket_fd, struct sockaddr_in *server_addr, struct host
 }
 
 void  Delete(){
-	show("iFolder/",8);
-	counter = 1;
+	//show("iFolder/",8);
+	//counter = 1;
 	//if all syncing is false	
 		//Call show()
 		//Ask Sr.No  of the file to Delete
@@ -335,7 +335,7 @@ void  Delete(){
 		struct sockaddr_in server_addr;
 		struct hostent *server;
 		int theNumber, Number;
-		port = 5005;
+		port = 5001;
 		char theString[255];
 		if(CreateASocket(&socket_fd) == true){
 			if(ConnectAServer(&socket_fd, &server_addr, &server, &port) == true){
@@ -356,7 +356,9 @@ void  Delete(){
 				if(n<0){
 					cout<<"Error Writing to the socket"<<endl;
 				}
-
+				//iManualSync();
+				getBack();
+				system("cat iFolder/a.txt");
 			}
 		}
 		else{

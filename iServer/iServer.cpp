@@ -1,14 +1,46 @@
+//#include <arpa/inet.h> //For doing htonl
 #include <iostream>
+#include <fstream>
 #include <cstdlib>
+#include <cstring>
+#include <dirent.h>
 #include <unistd.h>	//For read and write functions ie for processes
-#include <sys/socket.h>
+#include <sys/socket.h>	
 #include <sys/types.h>
 #include <netinet/in.h>	//For initializing part
-#include <string.h>	//For bzero initialization
-//#include <arpa/inet.h> //For doing htonl
+#include <netdb.h>
+
 using namespace std;
 
-void attend(char* theString){
+int counter = 1;
+void writeLS(string dir_name,int i, ofstream *fp){
+//	cout<<dir_name<<endl;
+	DIR *dirp = opendir(dir_name.c_str());
+	if(dirp == NULL)
+		return;
+	struct dirent *dp;
+	
+	while(dirp){
+		if((dp = readdir(dirp)) !=NULL){
+
+			if(strcmp(dp->d_name, ".") != 0 && strcmp(dp->d_name, "..") != 0)
+			{
+				for(int j = 0; j<i; j++){
+					*fp<<" ";
+				}
+				*fp<<"|"<<counter<<"|";
+				counter ++;
+				*fp<<dp->d_name<<endl;
+				//cout<<"|"<<endl;
+				writeLS(dir_name + "/" + dp->d_name,i+2, fp);
+			}
+			
+		}
+		
+		else{
+			break;
+		}				
+	}
 }
 
 
@@ -21,7 +53,9 @@ void doProcessing(int socket){
 		cout<<"Error reading from socket"<<endl;
 	}
 	int Number = ntohl(theNumber);
-	char theString[255];
+	char theUserName[255];
+	char thePassword[255];
+
 	/*if(theNumber == 1){
 		n = read(socket,(void *)theString, 255);
 		cout<<"Call Show on the Folder"<<endl;
@@ -29,22 +63,28 @@ void doProcessing(int socket){
 */
 	cout<<"The Number sent by the client is "<<Number<<endl;
 	//attend(theString);
-	n = read(socket,(void *)theString, 255);
+	n = read(socket,(void *)theUserName, 255);
 	if(n<0){
 		cout<<"Error reading from socket"<<endl;
 	}
 
-	cout<<"The String sent by the client is "<<theString<<endl;
-	n = read(socket,(void *)theString, 255);
+	cout<<"The String sent by the client is "<<theUserName<<endl;
+	n = read(socket,(void *)thePassword, 255);
 	if(n<0){
 		cout<<"Error reading from socket"<<endl;
 	}
 
-	cout<<"The String sent by the client is "<<theString<<endl;
+	cout<<"The String sent by the client is "<<thePassword<<endl;
 	/*n = write(socket,&theNumber, sizeof(theNumber));
 	if(n<0){
 		cout<<"ERROR writing to socket"<<endl;
 	}*/
+	string folder = strcat(theUserName, thePassword);
+	string loc = folder + "/a.txt";
+	ofstream  fp(loc.c_str());
+
+writeLS(folder , 2, &fp);
+	fp.close();
 
 }
 
@@ -63,7 +103,7 @@ int main(int argc, char const *argv[])
 
 	//Initialize the socket
 	bzero(&server_addr, sizeof(server_addr));
-	port = 5005;
+	port = 5001;
 	server_addr.sin_family = AF_INET;
 	server_addr.sin_addr.s_addr = INADDR_ANY;
 	server_addr.sin_port = htons(port);	//function converts the unsigned short integer hostshort from host byte order to network byte order
