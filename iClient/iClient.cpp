@@ -1,6 +1,7 @@
 #include <iostream>
 #include <cstdlib>
 #include <cstring>
+#include <dirent.h>
 
 
 #include <pthread.h>	//Header for POSIX threads
@@ -256,18 +257,25 @@ void getBack(){
 
 }
 
-void Show(){
-	//Show the files currently present on the remote server
-	ino_t serialno;
-	DIR *directoryStream;
+int show(const char *path){
 	struct dirent *streamElement;
-	string diriectoryName;
-	string command; 
-	
+	DIR* directoryStreamPointer;
+	directoryStreamPointer = opendir(path);
+	if(directoryStreamPointer == NULL){
+		cout<<"Error in opendir\n";
+		return -1;
+	}
+
+	while(streamElement = readdir(directoryStreamPointer)){
+		if(strcmp(streamElement->d_name,".") != 0 && strcmp(streamElement->d_name,"..") != 0)
+			cout<<"\t|"<<streamElement->d_name<<endl;
+	}
+	closedir(directoryStreamPointer);
+	return(0);
 }
 
-
 void  Delete(){
+	show("iFolder/");
 	//if all syncing is false	
 		//Call show()
 		//Ask Sr.No  of the file to Delete
