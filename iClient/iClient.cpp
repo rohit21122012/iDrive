@@ -11,6 +11,8 @@ pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 bool syncing = false;
 bool autosyncing = false;
 bool scheduledsyncing = false;
+bool backsyncing = false;
+
 
 string username = "New User";
 string password = "No Password";
@@ -56,8 +58,10 @@ void Prompt(int *resp){
 	cout<<"\tPress 1 : AUTO iSYNC"<<endl;
 	cout<<"\tPress 2 : SCHEDULED iSYNC"<<endl;
 	cout<<"\tPress 3 : MANUAL iSYNC"<<endl;
-	cout<<"\tPress 4 : To Exit"<<endl;
-	cout<<"\tPress 5 : Settings"<<endl<<"\n\tResponse : ";
+	cout<<"\tPress 4 : Back Sync"<<endl;
+	cout<<"\tPress 5 : Settings"<<endl;
+	cout<<"\tPress 6 : Delete Permanently"<<endl;
+	cout<<"\tPress 9 : To Exit"<<endl<<"\n\tResponse : ";
 	cin>>*resp;
 }
 
@@ -85,6 +89,21 @@ void Login(){
 	getName();
 	getPassword();
 }
+
+void* LetsBackSync(void* parameter){
+	pthread_mutex_lock(&mutex);
+	backsyncing = true;
+	
+	string command = "rsync -ab  ../iServer/" + username + password + "/  iFolder/";
+	system(command.c_str());
+	system("sleep 3");			//Just for testing purpose
+	backsyncing = false;
+		
+	pthread_mutex_unlock(&mutex);
+}
+
+
+
 
 void* LetsSync(void* parameter){
 	pthread_mutex_lock(&mutex);
@@ -207,6 +226,69 @@ void iAutoSync(){
 		}
 
 }
+void getBack(){
+	cout<<"----------------------SYNC BACK--------------------------"<<endl;
+
+	pthread_t Syncerthread;
+	int back;
+
+	if(backsyncing == true){
+		cout<<"\tAlready Back Syncing..."<<endl;
+		cout<<"\tPress 1. to Stop Back Syncing \n\tPress 2. to go back"<<endl<<"\n\tResponse : ";
+		cin>>back;
+		if(back == 1){
+			//kill scheduledsync thread;
+			pthread_mutex_lock(&mutex);
+			backsyncing = false;
+			pthread_mutex_unlock(&mutex);
+
+		}
+		else{
+
+		}
+	}
+	else{	
+		
+		cout<<"\tStart Syncing..."<<endl;
+		pthread_create(&Syncerthread, NULL, LetsBackSync, NULL);
+		backsyncing = true;
+	}
+
+}
+
+void Show(){
+	//Show the files currently present on the remote server
+	ino_t serialno;
+	DIR *directoryStream;
+	struct dirent *streamElement;
+	string diriectoryName;
+	string command; 
+}
+
+
+void  Delete(){
+	//if all syncing is false	
+		//Call show()
+		//Ask Sr.No  of the file to Delete
+		//Send the file name/ sr no via a socket
+
+				//Parallely on the server side receive the file name and run the system remove command
+
+}
+
+
+void ShareWith(){
+	//Ask for a user name to share with 
+	//send sender's and receiver's username to the server and name of the file
+		//Parallely on the server side add to a hidden file list the request(file and senders name) 
+
+}
+void ReceiveFrom(){
+	//Add senders name to the shared items list and shared file name in the filename list
+	//ask for acceptance
+	//if response is true then ask for a an rsync with the sharersname and  
+}
+
 
 void SignOrLog(int *utype){
 	cout<<"\t1. First Time"<<"\n\t2. Already a User\n\tUserType : ";
@@ -216,13 +298,15 @@ void SignOrLog(int *utype){
 	if(*utype == 1){
 		Setup();
 		Prompt(&resp);
-		while(resp != 4){
+		while(resp != 9){
 			switch(resp){
 				case 0: CurrentStatus();    break;
 				case 1:	iAutoSync();		break;
 				case 2:	iScheduledSync();	break;
 				case 3:	iManualSync();		break;
+				case 4: getBack();			break;
 				case 5: Settings(); 		break;
+				case 6: Delete();			break; 
 				default: break;
 			}
 			Prompt(&resp);
@@ -231,13 +315,15 @@ void SignOrLog(int *utype){
 	if(*utype == 2){
 		Login();	
 		Prompt(&resp);
-		while(resp != 4){
+		while(resp != 9){
 			switch(resp){
 				case 0: CurrentStatus();    break;
 				case 1:	iAutoSync();		break;
 				case 2:	iScheduledSync();	break;
 				case 3:	iManualSync();		break;
+				case 4: getBack(); 			break;
 				case 5: Settings(); 		break;
+				case 6: Delete();			break;
 				default: break;
 			}
 			Prompt(&resp);
