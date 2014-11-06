@@ -257,25 +257,36 @@ void getBack(){
 
 }
 
-int show(const char *path){
-	struct dirent *streamElement;
-	DIR* directoryStreamPointer;
-	directoryStreamPointer = opendir(path);
-	if(directoryStreamPointer == NULL){
-		cout<<"Error in opendir\n";
-		return -1;
-	}
+void show(string dir_name,int i){
+//	cout<<dir_name<<endl;
+	DIR *dirp = opendir(dir_name.c_str());
+	if(dirp == NULL)
+		return;
+	struct dirent *dp;
+	while(dirp){
+		if((dp = readdir(dirp)) !=NULL){
 
-	while(streamElement = readdir(directoryStreamPointer)){
-		if(strcmp(streamElement->d_name,".") != 0 && strcmp(streamElement->d_name,"..") != 0)
-			cout<<"\t|"<<streamElement->d_name<<endl;
+			if(strcmp(dp->d_name, ".") != 0 && strcmp(dp->d_name, "..") != 0)
+			{
+				for(int j = 0; j<i; j++){
+					cout<<" ";
+				}
+				cout<<"|";
+				cout<<dp->d_name<<endl;
+				//cout<<"|"<<endl;
+				show(dir_name + "/" + dp->d_name,i+2);
+			}
+		}
+		
+		else{
+			break;
+		}				
 	}
-	closedir(directoryStreamPointer);
-	return(0);
 }
 
+
 void  Delete(){
-	show("iFolder/");
+	show("iFolder/",8);
 	//if all syncing is false	
 		//Call show()
 		//Ask Sr.No  of the file to Delete
