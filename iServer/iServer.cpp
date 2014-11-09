@@ -12,7 +12,43 @@
 
 using namespace std;
 
+
 int counter = 1;
+void deleteFileAt(string dir_name, int k){
+	DIR *dirp = opendir(dir_name.c_str());
+	if(dirp == NULL)
+		return;
+	struct dirent *dp;
+	
+	while(dirp){
+		if((dp = readdir(dirp)) !=NULL){
+
+			if(strcmp(dp->d_name, ".") != 0 && strcmp(dp->d_name, "..") != 0)
+			{
+	
+				if(counter == k){
+					if(dir_name != "")
+					{
+						string ftoDel = "rm " + dir_name + "/" + dp->d_name;
+						system(ftoDel.c_str());
+						break;
+					}
+				}
+				counter ++;
+				//cout<<"|"<<endl;
+				deleteFileAt(dir_name + "/" + dp->d_name, k);
+			}
+			
+		}
+		
+		else{
+			break;
+		}				
+	}
+}
+
+
+
 void writeLS(string dir_name,int i, ofstream *fp){
 //	cout<<dir_name<<endl;
 	DIR *dirp = opendir(dir_name.c_str());
@@ -83,9 +119,18 @@ void doProcessing(int socket){
 	string loc = folder + "/a.txt";
 	ofstream  fp(loc.c_str());
 
-writeLS(folder , 2, &fp);
+	writeLS(folder , 2, &fp);
+	counter = 1;
 	fp.close();
 
+	
+	n = read(socket,&theNumber, sizeof(theNumber));
+	if(n<0){
+		cout<<"Error reading from socket"<<endl;
+	}
+	Number = ntohl(theNumber);
+	deleteFileAt(folder ,Number);
+	counter = 1;
 }
 
 int main(int argc, char const *argv[])

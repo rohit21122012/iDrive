@@ -1,4 +1,0 @@
-  |1|a.out
-  |2|AFolder
-    |3|afile.txt
-  |4|a.txt

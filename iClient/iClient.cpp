@@ -340,7 +340,7 @@ void  Delete(){
 		if(CreateASocket(&socket_fd) == true){
 			if(ConnectAServer(&socket_fd, &server_addr, &server, &port) == true){
 				cin>>Number;
-				int theNumber = htonl(Number);
+				theNumber = htonl(Number);
 				n = write(socket_fd, &theNumber, sizeof(theNumber));
 				if(n<0){
 					cout<<"Error Writing to the socket"<<endl;
@@ -357,8 +357,17 @@ void  Delete(){
 					cout<<"Error Writing to the socket"<<endl;
 				}
 				//iManualSync();
-				getBack();
+				LetsBackSync(NULL);
+
 				system("cat iFolder/a.txt");
+
+				cout<<"\tEnter File/Folder number to delete from server"<<endl<<"\n\tResponse : ";
+				cin>>Number;
+				theNumber = htonl(Number);
+				n = write(socket_fd, &theNumber, sizeof(theNumber));
+				if(n<0){
+					cout<<"Error Writing to the socket"<<endl;
+				}
 			}
 		}
 		else{
