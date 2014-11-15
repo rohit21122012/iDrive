@@ -23,24 +23,59 @@ string username = "New User";
 string password = "No Password";
 string plantype = "Basic";
 
-void getName(){
+char theString[255];
+char message[255];
+int n;
 
+void getName(int socket_fd){
+
+	
 	cout<<"\tEnter a Username for your new account?"<<endl<<"\n\tUsername : ";
 	cin>>username;
 	while(username.length()<5){
 		cout<<"\tUsername should be greater than 5 symbols"<<endl<<"\n\tUsername : ";;
 		cin>>username;
 	}
+	strcpy(theString, username.c_str());
+	int n = write(socket_fd, (void *)theString, 255);
+	if(n<0){
+		cout<<"Error Writing to the socket"<<endl;
+	}
+	n = read(socket_fd, (void *)message, 255);
+	if(n<0){
+		cout<<"Error Writing to the socket"<<endl;
+	}
+	while(strcmp(message, "Thank You, we'll remember your name") != 0){
+		cout<<"\tPlease enter a unique/different Username"<<endl<<"\n\tUsername : ";
+		cin>>username;
+		while(username.length()<5){
+			cout<<"\tUsername should be greater than 5 symbols"<<endl<<"\n\tUsername : ";;
+			cin>>username;
+		}
+		strcpy(theString, username.c_str());
+		n = write(socket_fd, (void *)theString, 255);
+		if(n<0){
+			cout<<"Error Writing to the socket"<<endl;
+		}
+		n = read(socket_fd, (void *)message, 255);
+		if(n<0){
+			cout<<"Error Writing to the socket"<<endl;
+		}
+	}
+	cout<<"\t"<<message<<endl;
+}	
 
-
-}
-
-void getPassword(){
+void getPassword(int socket_fd){
 	cout<<"\n\tLets have a password for your account..."<<endl<<"\n\tPassword : ";;
 	cin>>password;
 	while(password.length()<5){
 		cout<<"\tPassword should be greater than 5 symbols"<<endl<<"\n\tPassword : ";;
 		cin>>password;
+	}
+	strcpy(theString, password.c_str());
+	int n = write(socket_fd, (void *)theString, 255);
+	if(n<0){
+		cout<<"Error Writing to the socket"<<endl;
 	}
 }
 
@@ -66,6 +101,8 @@ void Prompt(int *resp){
 	cout<<"\tPress 4 : Back Sync"<<endl;
 	cout<<"\tPress 5 : Settings"<<endl;
 	cout<<"\tPress 6 : Delete Permanently"<<endl;
+	cout<<"\tPress 7 : Share A File"<<endl;
+	cout<<"\tPress 8 : Get Shared Files"<<endl;
 	cout<<"\tPress 9 : To Exit"<<endl<<"\n\tResponse : ";
 	cin>>*resp;
 }
@@ -78,28 +115,89 @@ void Settings(){
 }
 
 void SyncOut(){
-	string command = "rsync -ab iFolder/ ../iServer/" + username + password;	
+	string command = "sshpass -p 'hellocanyouhearme' rsync  -ab  ssh iFolder/ rohit@10.0.7.8:~/Desktop/iServer/" + username;
+	//string command = "rsync -ab iFolder/ ../iServer/" + username ;	
 	system(command.c_str());
 }
 
-void Setup(){
+void Setup(int socket_fd){
 	cout<<"---------------------------SETUP------------------------------"<<endl;
-	getName();
-	getPassword();
+	getName(socket_fd);
+	getPassword(socket_fd);
 	system("mkdir iFolder");
 }	
 
-void Login(){
-	cout<<"---------------------------SETUP------------------------------"<<endl;
-	getName();
-	getPassword();
+void Login(int socket_fd){
+	cout<<"---------------------------LOGIN------------------------------"<<endl;
+
+	cout<<"\tEnter your Username"<<endl<<"\n\tUsername : ";
+	cin>>username;
+	while(username.length()<5){
+		cout<<"\tUsername should be greater than 5 symbols"<<endl<<"\n\tUsername : ";;
+		cin>>username;
+	}
+	strcpy(theString, username.c_str());
+	n = write(socket_fd, (void *)theString, 255);
+	if(n<0){
+		cout<<"Error Writing to the socket"<<endl;
+	}
+
+	cout<<"\n\tYour Password Please."<<endl<<"\n\tPassword : ";;
+	cin>>password;
+	while(password.length()<5){
+		cout<<"\tPassword should be greater than 5 symbols"<<endl<<"\n\tPassword : ";;
+		cin>>password;
+	}
+	strcpy(theString, password.c_str());
+	n = write(socket_fd, (void *)theString, 255);
+	if(n<0){
+		cout<<"Error Writing to the socket"<<endl;
+	}
+	n = read(socket_fd, (void *)message, 255);
+	if(n<0){
+		cout<<"Error Writing to the socket"<<endl;
+	}
+	while(strcmp(message, "Incorrect Username/ Password") == 0){
+		cout<<"\tPlease enter correct Username"<<endl<<"\n\tUsername : ";
+		cin>>username;
+		while(username.length()<5){
+			cout<<"\tUsername should be greater than 5 symbols"<<endl<<"\n\tUsername : ";;
+			cin>>username;
+		}
+		strcpy(theString, username.c_str());
+		n = write(socket_fd, (void *)theString, 255);
+		if(n<0){
+			cout<<"Error Writing to the socket"<<endl;
+		}
+
+
+		cout<<"\n\tYour Correct Password Please."<<endl<<"\n\tPassword : ";;
+		cin>>password;
+		while(password.length()<5){
+		cout<<"\tPassword should be greater than 5 symbols"<<endl<<"\n\tPassword : ";;
+		cin>>password;
+		}
+		strcpy(theString, password.c_str());
+		n = write(socket_fd, (void *)theString, 255);
+		if(n<0){
+			cout<<"Error Writing to the socket"<<endl;
+		}
+
+		n = read(socket_fd, (void *)message, 255);
+		if(n<0){
+			cout<<"Error Writing to the socket"<<endl;
+		}
+	}
+	cout<<"\t"<<message<<endl;
+
 }
 
 void* LetsBackSync(void* parameter){
 	pthread_mutex_lock(&mutex);
 	backsyncing = true;
-	
-	string command = "rsync -ab  ../iServer/" + username + password + "/  iFolder/";
+	string command = "sshpass -p 'hellocanyouhearme' rsync  -ab   rohit@10.0.7.8:~/Desktop/iServer/" + username + "/  iFolder/";
+
+	//string command = "rsync -ab  ../iServer/" + username  + "/  iFolder/";
 	system(command.c_str());
 	system("sleep 3");			//Just for testing purpose
 	backsyncing = false;
@@ -114,7 +212,9 @@ void* LetsSync(void* parameter){
 	pthread_mutex_lock(&mutex);
 	syncing = true;
 	
-	string command = "rsync -ab iFolder/ ../iServer/" + username + password;
+	string command = "sshpass -p 'hellocanyouhearme' rsync  -ab  iFolder/ rohit@10.0.7.8:~/Desktop/iServer/" + username;
+
+	//string command = "rsync -ab iFolder/ ../iServer/" + username ;
 	system(command.c_str());
 	system("sleep 3");			//Just for testing purpose
 	syncing = false;
@@ -141,7 +241,9 @@ void* LetsAutoSync(void* parameter){
 	
 	while(1){
 		if(autosyncing == true){
-			string command = "rsync -ab iFolder/ ../iServer/" + username + password;
+			string command = "sshpass -p 'hellocanyouhearme' rsync  -ab  iFolder/ rohit@10.0.7.8:~/Desktop/iServer/" + username;
+
+			//string command = "rsync -ab iFolder/ ../iServer/" + username ;
 			system(command.c_str());
 			system("sleep 3");	//just for testing purpose		
 		}else{
@@ -156,7 +258,9 @@ void* LetsScheduledSync(void* parameter){
 
 	while(1){
 		if(autosyncing == true){
-			string command = "rsync -ab iFolder/ ../iServer/" + username + password + "; sleep " + *timeinterval;
+			string command = "sshpass -p 'hellocanyouhearme' rsync  -ab  iFolder/ rohit@10.0.7.8:~/Desktop/iServer/" + username + "; sleep " + *timeinterval;
+			
+			//string command = "rsync -ab iFolder/ ../iServer/" + username  + "; sleep " + *timeinterval;
 			cout<<command<<endl;
 			system(command.c_str());
 		}else{
@@ -300,7 +404,7 @@ bool CreateASocket(int *socket_fd){
 }
 
 bool ConnectAServer(int *socket_fd, struct sockaddr_in *server_addr, struct hostent **server, int *port){
-	*server = gethostbyname("localhost");
+	*server = gethostbyname("10.0.7.8");
 
 	if(*server<0){
 		cout<<"No Such Host"<<endl;
@@ -321,83 +425,178 @@ bool ConnectAServer(int *socket_fd, struct sockaddr_in *server_addr, struct host
 	return true;
 }
 
-void  Delete(){
-	//show("iFolder/",8);
-	//counter = 1;
-	//if all syncing is false	
-		//Call show()
-		//Ask Sr.No  of the file to Delete
-		//Send the file name/ sr no via a socket
+void  Delete(int socket_fd){
 
-				//Parallely on the server side receive the file name and run the system remove command
 	if(autosyncing == false && syncing == false && scheduledsyncing == false && backsyncing == false){
-		int socket_fd, port, n;
-		struct sockaddr_in server_addr;
-		struct hostent *server;
-		int theNumber, Number;
-		port = 5001;
-		char theString[255];
-		if(CreateASocket(&socket_fd) == true){
-			if(ConnectAServer(&socket_fd, &server_addr, &server, &port) == true){
-				cin>>Number;
-				theNumber = htonl(Number);
-				n = write(socket_fd, &theNumber, sizeof(theNumber));
-				if(n<0){
-					cout<<"Error Writing to the socket"<<endl;
-				}
+		int Number = 2;
+		int theNumber = htonl(Number);
+		int n = write(socket_fd, &theNumber, sizeof(theNumber));
+		if(n<0){
+			cout<<"Error Writing to the socket"<<endl;
+		}		
 
-				strcpy(theString, username.c_str());
-				n = write(socket_fd, (void *)theString, 255);
-				if(n<0){
-					cout<<"Error Writing to the socket"<<endl;
-				}
-				strcpy(theString, password.c_str());
-				n = write(socket_fd, (void *)theString, 255);
-				if(n<0){
-					cout<<"Error Writing to the socket"<<endl;
-				}
-				//iManualSync();
-				LetsBackSync(NULL);
+		
+		//iManualSync();
+		LetsBackSync(NULL);
 
-				system("cat iFolder/a.txt");
+		system("cat iFolder/.a");
 
-				cout<<"\tEnter File/Folder number to delete from server"<<endl<<"\n\tResponse : ";
-				cin>>Number;
-				theNumber = htonl(Number);
-				n = write(socket_fd, &theNumber, sizeof(theNumber));
-				if(n<0){
-					cout<<"Error Writing to the socket"<<endl;
-				}
-			}
-		}
-		else{
-			cout<<"Unable to fetch Content"<<endl;
+		cout<<"\tEnter File/Folder number to delete from server"<<endl<<"\n\tResponse : ";
+		cin>>Number;
+		theNumber = htonl(Number);
+		n = write(socket_fd, &theNumber, sizeof(theNumber));
+		if(n<0){
+			cout<<"Error Writing to the socket"<<endl;
 		}
 	}
 
 }
 
 
-void ShareWith(){
+void ShareAFile(int socket_fd){
+	int Number = 3;
+	int  theNumber = htonl(Number);
+	n = write(socket_fd, &theNumber, sizeof(theNumber));
+	if(n<0){
+		cout<<"Error Writing to the socket"<<endl;
+	}	
+	string shareuser;
+	string filename;
+	cout<<"---------------------SHARING-----------------------"<<endl;
 	//Ask for a user name to share with 
+	LetsSync(NULL);
 	//send sender's and receiver's username to the server and name of the file
 		//Parallely on the server side add to a hidden file list the request(file and senders name) 
+	if(autosyncing == false && syncing == false && scheduledsyncing == false && backsyncing == false){
+		cout<<"\tEnter a Username to Share With"<<endl<<"\tUserName : ";
+		cin>>shareuser;
+		while(shareuser.length()<5){
+			cout<<"\tUsername should be greater than 5 symbols"<<endl<<"\n\tUsername : ";;
+			cin>>shareuser;
+		}
+		strcpy(theString, shareuser.c_str());
+		int n = write(socket_fd, (void *)theString, 255);
+		if(n<0){
+			cout<<"Error Writing to the socket"<<endl;
+		}
+		n = read(socket_fd, (void *)message, 255);
+		if(n<0){
+			cout<<"Error Writing to the socket"<<endl;
+		}
+		while(strcmp(message, "There is No Such User") == 0){
+			cout<<"\tPlease enter a valid Username"<<endl<<"\n\tUsername : ";
+			cin>>shareuser;
+			while(shareuser.length()<5){
+				cout<<"\tUsername should be greater than 5 symbols"<<endl<<"\n\tUsername : ";;
+				cin>>shareuser;
+			}
+			strcpy(theString, shareuser.c_str());
+			n = write(socket_fd, (void *)theString, 255);
+			if(n<0){
+				cout<<"Error Writing to the socket"<<endl;
+			}
+			n = read(socket_fd, (void *)message, 255);
+			if(n<0){
+				cout<<"Error Writing to the socket"<<endl;
+			}
+		}
+		cout<<"\t"<<message<<endl;
+		cout<<"\tEnter the File to Share "<<endl<<"\tFileName : ";
+		cin>>filename;
+		strcpy(theString, filename.c_str());
+		n = write(socket_fd, (void *)theString, 255);
+		if(n<0){
+			cout<<"Error Writing to the socket"<<endl;
+		}
+		cout<<"\tYour File has been shared ..."<<endl;
+	}
+
+
+
 
 }
-void ReceiveFrom(){
-	//Add senders name to the shared items list and shared file name in the filename list
-	//ask for acceptance
-	//if response is true then ask for a an rsync with the sharersname and  
+
+
+void SeePendingShares(int socket_fd){
+	cout<<"---------------Pending Shares--------------------------"<<endl;
+	int Number = 4;
+	int  theNumber = htonl(Number);
+	n = write(socket_fd, &theNumber, sizeof(theNumber));
+	if(n<0){
+		cout<<"Error Writing to the socket"<<endl;
+	}	
+	n = read(socket_fd, (void *)message, 255);
+	if(n<0){
+		cout<<"Error Writing to the socket"<<endl;
+	}	
+	//cout<<message<<endl;
+	int counter = 0;
+	while(strcmp(message, "Finished")!=0)
+	{
+		cout<<"\t"<<message<<" : ";
+		n = read(socket_fd, (void *)message, 255);
+		if(n<0){
+			cout<<"Error Writing to the socket"<<endl;
+		}	
+		cout<<message<<endl;
+		n = read(socket_fd, (void *)message, 255);
+		if(n<0){
+			cout<<"Error Writing to the socket"<<endl;
+		}	
+		counter ++;
+	}
+	Number = 0;
+	int back;
+	cout<<"-------------------------------------------------------"<<endl;
+	cout<<"\n\n\tPress 1. to Sync any shares left\n\tPress 2. to go back"<<endl<<"\n\tResponse : ";
+	cin>>back;
+
+
+	theNumber = htonl(back);
+	n = write(socket_fd, &theNumber, sizeof(theNumber));
+	if(n<0){
+		cout<<"Error Writing to the socket"<<endl;
+	}
+	if(back != 2){
+		cout<<endl<<endl<<"\tEnter File No to accept the share"<<endl<<"\tFileNo : ";
+		cin>>Number;
+		if(Number < counter){
+			theNumber = htonl(Number);
+			n = write(socket_fd, &theNumber, sizeof(theNumber));
+			if(n<0){
+				cout<<"Error Writing to the socket"<<endl;
+			}
+		}
+		cout<<"\tThe shared file has been added to your space ..."<<endl;
+	}
 }
 
+void send9(int socket_fd){
+	int Number = 9;
+	int  theNumber = htonl(Number);
+	n = write(socket_fd, &theNumber, sizeof(theNumber));
+	cout<< Number;
+	if(n<0){
+		cout<<"Error Writing to the socket"<<endl;
+	}	
+}
 
-void SignOrLog(int *utype){
+void SignOrLog(int *utype, int socket_fd){
 	cout<<"\t1. First Time"<<"\n\t2. Already a User\n\tUserType : ";
 	cin>>*utype;
 
 	int resp;
+	int Number;
+	int theNumber;
+	int n;
 	if(*utype == 1){
-		Setup();
+		Number = 0;
+		theNumber = htonl(Number);
+		n = write(socket_fd, &theNumber, sizeof(theNumber));
+		if(n<0){
+			cout<<"Error Writing to the socket"<<endl;
+		}
+		Setup(socket_fd);
 		Prompt(&resp);
 		while(resp != 9){
 			switch(resp){
@@ -407,14 +606,23 @@ void SignOrLog(int *utype){
 				case 3:	iManualSync();		break;
 				case 4: getBack();			break;
 				case 5: Settings(); 		break;
-				case 6: Delete();			break; 
-				default: break;
+				case 6: Delete(socket_fd);			break; 
+				case 7: ShareAFile(socket_fd);		break;
+				case 8: SeePendingShares(socket_fd); break;
+				default:	break;
 			}
 			Prompt(&resp);
-		}
+		} 
+		 send9(socket_fd);
 	}
 	if(*utype == 2){
-		Login();	
+		Number = 1;
+		theNumber = htonl(Number);
+		n = write(socket_fd, &theNumber, sizeof(theNumber));
+		if(n<0){
+			cout<<"Error Writing to the socket"<<endl;
+		}
+		Login(socket_fd);	
 		Prompt(&resp);
 		while(resp != 9){
 			switch(resp){
@@ -424,20 +632,42 @@ void SignOrLog(int *utype){
 				case 3:	iManualSync();		break;
 				case 4: getBack(); 			break;
 				case 5: Settings(); 		break;
-				case 6: Delete();			break;
-				default: break;
+				case 6: Delete(socket_fd);			break;
+				case 7: ShareAFile(socket_fd);		break;
+				case 8:	SeePendingShares(socket_fd); break;
+				default:break;
 			}
 			Prompt(&resp);
 		}
+		 send9(socket_fd); 
 	}
+
+		cout<<"\tThank You for Using iDrive :)"<<endl;
+
 
 }
 
 
 int main(){
-	int  utype;
-	cout<<"\n\tWelcome to iDrive. Relax and backUp...\n"<<endl;
-	SignOrLog(&utype);
+	int socket_fd, port, n;
+	struct sockaddr_in server_addr;
+	struct hostent *server;
+	int theNumber, Number;
+	port = 5001;
+	char theString[255];
+	if(CreateASocket(&socket_fd) == true){
+		if(ConnectAServer(&socket_fd, &server_addr, &server, &port) == true){
+			int  utype;
+			cout<<"\n\tWelcome to iDrive. Relax and backUp...\n"<<endl;
+			SignOrLog(&utype, socket_fd);
+		}
+		else{
+			cout<<"Unable to fetch Content"<<endl;
+		}
 
+	}
+	else{
+		cout<<"Cannot Setup a connection"<<endl;
+	}
 	return 0;
 }
